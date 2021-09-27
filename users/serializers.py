@@ -44,10 +44,17 @@ class UserSignupSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
     def create(self, validated_data):
-        user = User.objects.create(
-          username=validated_data['username'],
-          password=validated_data['password'],
-          email=validated_data['email'],
-        )
-        user.save()
-        return user
+        try:
+            validated_data['email']
+        except Exception as e:
+            raise serializers.ValidationError({"email": ["Email field required."]})
+        if not User.objects.filter(email=validated_data['email']).exists():
+            user = User.objects.create(
+              username=validated_data['username'],
+              password=validated_data['password'],
+              email=validated_data['email'],
+            )
+            user.save()
+            return user
+        else:
+            raise serializers.ValidationError({"email": ["A user with that email already exists."]})

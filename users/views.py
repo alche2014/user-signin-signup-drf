@@ -11,6 +11,7 @@ from rest_framework.generics import CreateAPIView
 from .serializers import UserLoginSerializers, UserSignupSerializer
 from django.contrib.auth import get_user_model
 from rest_framework import permissions
+User = get_user_model()
 
 
 class ProfileView(APIView):
@@ -52,7 +53,17 @@ class UserLoginAPIView(APIView):
         user_serilaizer = UserLoginSerializers(data=data)
         if user_serilaizer.is_valid(raise_exception=True):
             new_data = user_serilaizer.data
-            return Response(new_data, status=HTTP_200_OK)
+            user = User.objects.get(email=new_data['email'])
+            token, created = Token.objects.get_or_create(user=user)
+            user_data = {
+                'token': token.key,
+                'username': user.username,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'user_id': user.pk,
+                'email': user.email,
+            }
+            return Response(user_data, status=HTTP_200_OK)
         else:
             return Response({"msg": "invalid user"}, status=HTTP_400_BAD_REQUEST)
 
